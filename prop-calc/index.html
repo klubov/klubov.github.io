@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Bulma!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+</head>
+<body>
+    <section class="section" id="app" v-cloak>
+        <div class="container">
+            <div class="columns">
+                <div class="column">
+                    <div class="columns">
+                        <div class="column is-two-fifths">
+                            <div class="field">
+                                <label class="label">{{ t('Step') }}</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select v-model="form.step">
+                                            <option v-for="step in steps" :value="step">{{ step }}%</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">{{ t('Offset') }} (S)</label>
+                                <div class="control">
+                                    <input class="input" type="text" :placeholder="t('Offset')" v-model="form.offset">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">{{ t('Diameter') }} (D)</label>
+                                <div class="control">
+                                    <input class="input" type="text" :placeholder="t('Diameter')" v-model="form.diameter">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">{{ t('Pitch') }} (P)</label>
+                                <div class="control">
+                                    <input class="input" type="text" :placeholder="t('Pitch')" v-model="form.pitch">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column"></div>
+                        <div class="column is-two-fifths">
+                            <div class="field">
+                                <label class="label">{{ t('Language') }}</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select v-model="form.language">
+                                            <option v-for="item in languages" :value="item.code">{{ item.name }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">{{ t('Units') }}</label>
+                                <div class="control">
+                                    <label class="radio">
+                                        <input type="radio" name="unit" value="mm" v-model="form.unit">
+                                        {{ t('mm')}}
+                                    </label>
+                                    <label class="radio">
+                                        <input type="radio" name="unit" value="inch" v-model="form.unit">
+                                        {{ t('inch')}}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <img src="illustration.png" style="width: 100%; height: auto;">
+                </div>
+            </div>
+            <div class="columns">
+                <div class="column is-half">
+                    <table class="table is-fullwidth">
+                        <thead>
+                        <tr>
+                            <th>L, %</th>
+                            <th class="has-text-centered">L, {{ t(form.unit) }}</th>
+                            <th class="has-text-right">{{ t('Angle') }}, &deg;</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="row in getData">
+                            <td>{{ row.step }}</td>
+                            <td class="has-text-centered">{{ row.x }}</td>
+                            <td class="has-text-right">{{ row.angle }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
+    <script>
+      const localization = {
+        data: {
+          languages: [
+            {code: 'en', name: 'English'},
+            {code: 'es', name: 'Español'},
+            {code: 'ru', name: 'Русский'},
+            {code: 'uk', name: 'Українська'}
+          ],
+          translations: {
+            en: {
+              Language: 'Language',
+              Units: 'Units',
+              mm: 'mm',
+              inch: 'inch',
+              Step: 'Step',
+              Offset: 'Offset',
+              Diameter: 'Diameter',
+              Pitch: 'Pitch',
+              Angle: 'Angle'
+            },
+            es: {
+              Language: 'Idioma',
+              Units: 'Unidades',
+              mm: 'mm',
+              inch: 'pulgada',
+              Step: 'Paso',
+              Offset: 'Desplazamiento',
+              Diameter: 'Diámetro',
+              Pitch: 'Paso',
+              Angle: 'Ángulo'
+            },
+            ru: {
+              Language: 'Язык',
+              Units: 'Единицы',
+              mm: 'мм',
+              inch: 'дюйм',
+              Step: 'Шаг',
+              Offset: 'Смещение',
+              Diameter: 'Диаметр',
+              Pitch: 'Шаг',
+              Angle: 'Угол'
+            },
+            uk: {
+              Language: 'Мова',
+              Units: 'Одиниці',
+              mm: 'мм',
+              inch: 'дюйм',
+              Step: 'Крок',
+              Offset: 'Зміщення',
+              Diameter: 'Діаметр',
+              Pitch: 'Крок',
+              Angle: 'Кут'
+            }
+          }
+        }
+      }
+      new Vue({
+        el: '#app',
+        mixins: [localization],
+        data: {
+          steps: [1, 2, 5, 10, 12.5, 20, 25],
+          form: {
+            language: 'en',
+            unit: 'mm',
+            step: 10,
+            offset: 0,
+            diameter: 350,
+            pitch: 500
+          }
+        },
+        created: function() {
+          const language = window.localStorage.getItem('language')
+          this.form.language = null === language ? 'en' : language
+          const unit = window.localStorage.getItem('unit')
+          this.form.unit = null === unit ? 'mm' : unit
+          const step = window.localStorage.getItem('step')
+          this.form.step = null === step ? 10 : step
+          const offset = window.localStorage.getItem('offset')
+          this.form.offset = null === offset ? 0 : offset
+          const diameter = window.localStorage.getItem('diameter')
+          this.form.diameter = null === diameter ? 350 : diameter
+          const pitch = window.localStorage.getItem('pitch')
+          this.form.pitch = null === pitch ? 500 : pitch
+        },
+        methods: {
+          t: function(text) {
+            return this.translations[this.form.language][text] || text
+          }
+        },
+        computed: {
+          getData: function() {
+            let data = []
+            const ei = 100 / this.form.step
+            let step = 0
+            for (let i = 0; i <= ei; i++) {
+              const x = Math.round((this.form.diameter / 2 - this.form.offset) / 100 * step * 100) / 100
+              const angle = Math.round(Math.atan(this.form.pitch / (2 * Math.PI * (x + Number(this.form.offset)))) * (180 / Math.PI) * 100) / 100
+              data.push({step, x, angle})
+              step = Number(step) + Number(this.form.step)
+            }
+            return data
+          }
+        },
+        watch: {
+          'form.language': function (value) {
+            window.localStorage.setItem('language', value)
+          },
+          'form.unit': function (value) {
+            window.localStorage.setItem('unit', value)
+          },
+          'form.step': function (value) {
+            window.localStorage.setItem('step', value)
+          },
+          'form.offset': function (value) {
+            window.localStorage.setItem('offset', value)
+          },
+          'form.diameter': function (value) {
+            window.localStorage.setItem('diameter', value)
+          },
+          'form.pitch': function (value) {
+            window.localStorage.setItem('pitch', value)
+          }
+        }
+      })
+    </script>
+</body>
+</html>
