@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>F1D Prop calculator</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
     <style>
         .pitch-chart {
             --series-1: #2a78d6;
@@ -143,7 +143,7 @@
                             </div>
                             <div class="field">
                                 <label class="label">{{ t('Units') }}</label>
-                                <div class="control">
+                                <div class="control radios">
                                     <label class="radio">
                                         <input type="radio" name="unit" value="mm" v-model="form.unit">
                                         {{ t('mm')}}
@@ -211,7 +211,7 @@
             </div>
         </div>
     </section>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.43/dist/vue.global.prod.js"></script>
     <script>
       // Evenly spaced round tick values covering [min, max]
       function niceTicks(min, max, count) {
@@ -231,7 +231,7 @@
         return ticks
       }
       const localization = {
-        data: {
+        data: () => ({
           languages: [
             {code: 'en', name: 'English'},
             {code: 'es', name: 'Español'},
@@ -316,12 +316,11 @@
               FinalPitch: 'Кінцеве значення кроку'
             }
           }
-        }
+        })
       }
-      new Vue({
-        el: '#app',
+      Vue.createApp({
         mixins: [localization],
-        data: {
+        data: () => ({
           steps: [1, 2, 5, 10, 12.5, 20, 25],
           hover: null,
           chartWidth: 600,
@@ -337,7 +336,7 @@
             transitionType: 'percent',
             finalPitch: 400
           }
-        },
+        }),
         created: function() {
           const language = window.localStorage.getItem('language')
           this.form.language = null === language ? 'en' : language
@@ -506,7 +505,7 @@
             window.localStorage.setItem('finalPitch', value)
           }
         }
-      })
+      }).mount('#app')
     </script>
 </body>
 </html>
