@@ -10,7 +10,10 @@
 <body>
     <section class="section" id="app" v-cloak>
         <div class="container">
-            <div class="columns">
+            <div class="columns is-flex-direction-row-reverse">
+                <div class="column">
+                    <img src="illustration.png" style="width: 100%; height: auto;">
+                </div>
                 <div class="column">
                     <div class="columns">
                         <div class="column is-two-fifths">
@@ -42,6 +45,46 @@
                                     <input class="input" type="text" :placeholder="t('Pitch')" v-model="form.pitch">
                                 </div>
                             </div>
+                            <div class="field">
+                                <label class="label">{{ t('PitchMethod') }}</label>
+                                <div class="control">
+                                    <div class="select">
+                                        <select v-model="form.method">
+                                            <option value="helical">{{ t('Helical') }}</option>
+                                            <option value="treger">{{ t('Treger') }}</option>
+                                            <option value="quadratic">{{ t('Quadratic') }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <template v-if="form.method !== 'helical'">
+                                <label class="label">{{ t('Transition') }}</label>
+                                <div class="field has-addons mb-0">
+                                    <div class="control is-expanded">
+                                        <input class="input" type="text" :placeholder="t('Transition')" v-model="form.transition">
+                                    </div>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select v-model="form.transitionType">
+                                                <option value="length">{{ t(form.unit) }} ({{ t('radius') }})</option>
+                                                <option value="percent">{{ t('OfRadius') }}</option>
+                                                <option value="angle">{{ t('Angle') }}, &deg;</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="help mb-3">
+                                    r = {{ transitionInfo.radius }} {{ t(form.unit) }},
+                                    {{ transitionInfo.percent }}%,
+                                    {{ transitionInfo.angle }}&deg;
+                                </p>
+                                <div class="field">
+                                    <label class="label">{{ t('FinalPitch') }}</label>
+                                    <div class="control">
+                                        <input class="input" type="text" :placeholder="t('FinalPitch')" v-model="form.finalPitch">
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                         <div class="column"></div>
                         <div class="column is-two-fifths">
@@ -71,9 +114,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="column">
-                    <img src="illustration.png" style="width: 100%; height: auto;">
-                </div>
             </div>
             <div class="columns">
                 <div class="column is-half">
@@ -82,6 +122,7 @@
                         <tr>
                             <th>L, %</th>
                             <th class="has-text-centered">L, {{ t(form.unit) }}</th>
+                            <th v-if="form.method !== 'helical'" class="has-text-centered">{{ t('Pitch') }}, {{ t(form.unit) }}</th>
                             <th class="has-text-right">{{ t('Angle') }}, &deg;</th>
                         </tr>
                         </thead>
@@ -89,6 +130,7 @@
                         <tr v-for="row in getData">
                             <td>{{ row.step }}</td>
                             <td class="has-text-centered">{{ row.x }}</td>
+                            <td v-if="form.method !== 'helical'" class="has-text-centered">{{ row.pitch }}</td>
                             <td class="has-text-right">{{ row.angle }}</td>
                         </tr>
                         </tbody>
@@ -117,7 +159,15 @@
               Offset: 'Offset',
               Diameter: 'Diameter',
               Pitch: 'Pitch',
-              Angle: 'Angle'
+              Angle: 'Angle',
+              PitchMethod: 'Pitch method',
+              Helical: 'Helical',
+              Treger: 'Ivan Treger method',
+              Quadratic: 'Delayed quadratic',
+              Transition: 'Transition point',
+              OfRadius: '% of radius',
+              radius: 'radius',
+              FinalPitch: 'Final pitch'
             },
             es: {
               Language: 'Idioma',
@@ -128,7 +178,15 @@
               Offset: 'Desplazamiento',
               Diameter: 'Diámetro',
               Pitch: 'Paso',
-              Angle: 'Ángulo'
+              Angle: 'Ángulo',
+              PitchMethod: 'Método de paso',
+              Helical: 'Helicoidal',
+              Treger: 'Método de Ivan Treger',
+              Quadratic: 'Cuadrática diferida',
+              Transition: 'Punto de transición',
+              OfRadius: '% del radio',
+              radius: 'radio',
+              FinalPitch: 'Paso final'
             },
             ru: {
               Language: 'Язык',
@@ -139,7 +197,15 @@
               Offset: 'Смещение',
               Diameter: 'Диаметр',
               Pitch: 'Шаг',
-              Angle: 'Угол'
+              Angle: 'Угол',
+              PitchMethod: 'Способ построения шага',
+              Helical: 'Геликоидная',
+              Treger: 'Метод Ивана Трегера',
+              Quadratic: 'Квадратичная с отступом',
+              Transition: 'Отступ',
+              OfRadius: '% от радиуса',
+              radius: 'радиус',
+              FinalPitch: 'Конечное значение шага'
             },
             uk: {
               Language: 'Мова',
@@ -150,7 +216,15 @@
               Offset: 'Зміщення',
               Diameter: 'Діаметр',
               Pitch: 'Крок',
-              Angle: 'Кут'
+              Angle: 'Кут',
+              PitchMethod: 'Спосіб побудови кроку',
+              Helical: 'Гелікоїдна',
+              Treger: 'Метод Івана Трегера',
+              Quadratic: 'Квадратична з відступом',
+              Transition: 'Відступ',
+              OfRadius: '% від радіуса',
+              radius: 'радіус',
+              FinalPitch: 'Кінцеве значення кроку'
             }
           }
         }
@@ -166,7 +240,11 @@
             step: 10,
             offset: 0,
             diameter: 350,
-            pitch: 500
+            pitch: 500,
+            method: 'helical',
+            transition: 70,
+            transitionType: 'percent',
+            finalPitch: 400
           }
         },
         created: function() {
@@ -182,21 +260,63 @@
           this.form.diameter = null === diameter ? 350 : diameter
           const pitch = window.localStorage.getItem('pitch')
           this.form.pitch = null === pitch ? 500 : pitch
+          const method = window.localStorage.getItem('method')
+          this.form.method = null === method ? 'helical' : method
+          const transition = window.localStorage.getItem('transition')
+          this.form.transition = null === transition ? 70 : transition
+          const transitionType = window.localStorage.getItem('transitionType')
+          this.form.transitionType = null === transitionType ? 'percent' : transitionType
+          const finalPitch = window.localStorage.getItem('finalPitch')
+          this.form.finalPitch = null === finalPitch ? 400 : finalPitch
         },
         methods: {
           t: function(text) {
             return this.translations[this.form.language][text] || text
+          },
+          // Helical pitch up to the transition radius, then the pitch changes from P
+          // to the final pitch at the tip: linearly (Treger method) or quadratically,
+          // starting tangent to the constant pitch
+          getPitch: function(r) {
+            const pitch = Number(this.form.pitch)
+            const radius = this.form.diameter / 2
+            const transition = this.transitionRadius
+            if ('helical' === this.form.method || r <= transition || transition >= radius) {
+              return pitch
+            }
+            const k = (r - transition) / (radius - transition)
+            return pitch + (this.form.finalPitch - pitch) * ('quadratic' === this.form.method ? k * k : k)
           }
         },
         computed: {
+          // Radius (from the axis) where the pitch starts to change
+          transitionRadius: function() {
+            const value = Number(this.form.transition)
+            let r = value
+            if ('percent' === this.form.transitionType) {
+              r = this.form.diameter / 2 * value / 100
+            } else if ('angle' === this.form.transitionType) {
+              r = this.form.pitch / (2 * Math.PI * Math.tan(value * Math.PI / 180))
+            }
+            return Math.max(0, r)
+          },
+          transitionInfo: function() {
+            const r = this.transitionRadius
+            return {
+              radius: Math.round(r * 100) / 100,
+              percent: Math.round(r / (this.form.diameter / 2) * 100 * 100) / 100,
+              angle: Math.round(Math.atan(this.form.pitch / (2 * Math.PI * r)) * (180 / Math.PI) * 100) / 100
+            }
+          },
           getData: function() {
             let data = []
             const ei = 100 / this.form.step
             let step = 0
             for (let i = 0; i <= ei; i++) {
               const x = Math.round((this.form.diameter / 2 - this.form.offset) / 100 * step * 100) / 100
-              const angle = Math.round(Math.atan(this.form.pitch / (2 * Math.PI * (x + Number(this.form.offset)))) * (180 / Math.PI) * 100) / 100
-              data.push({step, x, angle})
+              const r = x + Number(this.form.offset)
+              const pitch = this.getPitch(r)
+              const angle = Math.round(Math.atan(pitch / (2 * Math.PI * r)) * (180 / Math.PI) * 100) / 100
+              data.push({step, x, angle, pitch: Math.round(pitch * 100) / 100})
               step = Number(step) + Number(this.form.step)
             }
             return data
@@ -220,6 +340,18 @@
           },
           'form.pitch': function (value) {
             window.localStorage.setItem('pitch', value)
+          },
+          'form.method': function (value) {
+            window.localStorage.setItem('method', value)
+          },
+          'form.transition': function (value) {
+            window.localStorage.setItem('transition', value)
+          },
+          'form.transitionType': function (value) {
+            window.localStorage.setItem('transitionType', value)
+          },
+          'form.finalPitch': function (value) {
+            window.localStorage.setItem('finalPitch', value)
           }
         }
       })
