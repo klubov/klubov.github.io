@@ -53,6 +53,10 @@
 <body>
     <section class="section" id="app" v-cloak>
         <div class="container">
+            <div v-if="shared" class="notification is-info is-light">
+                {{ t('SharedNotice') }}
+                <a href="#" @click.prevent="forgetLink">{{ t('MySettings') }}</a>
+            </div>
             <div class="columns is-flex-direction-row-reverse">
                 <div class="column">
                     <img src="illustration.png" style="width: 100%; height: auto;">
@@ -153,6 +157,9 @@
                                         {{ t('inch')}}
                                     </label>
                                 </div>
+                            </div>
+                            <div class="field">
+                                <button class="button" type="button" @click="share">{{ copied ? t('Copied') : t('Share') }}</button>
                             </div>
                         </div>
                     </div>
@@ -256,7 +263,11 @@
               Transition: 'Transition point',
               OfRadius: '% of radius',
               radius: 'radius',
-              FinalPitch: 'Final pitch'
+              FinalPitch: 'Final pitch',
+              Share: 'Share',
+              Copied: 'Link copied',
+              SharedNotice: 'Settings opened from a link are not saved.',
+              MySettings: 'Back to my settings'
             },
             es: {
               Language: 'Idioma',
@@ -275,7 +286,11 @@
               Transition: 'Punto de transición',
               OfRadius: '% del radio',
               radius: 'radio',
-              FinalPitch: 'Paso final'
+              FinalPitch: 'Paso final',
+              Share: 'Compartir',
+              Copied: 'Enlace copiado',
+              SharedNotice: 'Los parámetros abiertos desde un enlace no se guardan.',
+              MySettings: 'Volver a mis ajustes'
             },
             ru: {
               Language: 'Язык',
@@ -294,7 +309,11 @@
               Transition: 'Отступ',
               OfRadius: '% от радиуса',
               radius: 'радиус',
-              FinalPitch: 'Конечное значение шага'
+              FinalPitch: 'Конечное значение шага',
+              Share: 'Поделиться',
+              Copied: 'Ссылка скопирована',
+              SharedNotice: 'Параметры открыты по ссылке и не сохраняются.',
+              MySettings: 'Вернуться к моим настройкам'
             },
             uk: {
               Language: 'Мова',
@@ -313,51 +332,50 @@
               Transition: 'Відступ',
               OfRadius: '% від радіуса',
               radius: 'радіус',
-              FinalPitch: 'Кінцеве значення кроку'
+              FinalPitch: 'Кінцеве значення кроку',
+              Share: 'Поділитися',
+              Copied: 'Посилання скопійовано',
+              SharedNotice: 'Параметри відкрито за посиланням, вони не зберігаються.',
+              MySettings: 'Повернутися до моїх налаштувань'
             }
           }
         })
       }
+      const steps = [1, 2, 5, 10, 12.5, 20, 25]
+      const defaults = {
+        language: 'en',
+        unit: 'mm',
+        step: 10,
+        offset: 0,
+        diameter: 350,
+        pitch: 500,
+        method: 'helical',
+        transition: 70,
+        transitionType: 'percent',
+        finalPitch: 400
+      }
+      // Allowed values of the fields that come from a fixed list
+      const options = {
+        language: ['en', 'es', 'ru', 'uk'],
+        unit: ['mm', 'inch'],
+        step: steps.map(String),
+        method: ['helical', 'treger', 'quadratic'],
+        transitionType: ['length', 'percent', 'angle']
+      }
+      // Everything except the language goes to a shared link
+      const sharedFields = Object.keys(defaults).filter(key => 'language' !== key)
       Vue.createApp({
         mixins: [localization],
         data: () => ({
-          steps: [1, 2, 5, 10, 12.5, 20, 25],
+          steps,
           hover: null,
           chartWidth: 600,
-          form: {
-            language: 'en',
-            unit: 'mm',
-            step: 10,
-            offset: 0,
-            diameter: 350,
-            pitch: 500,
-            method: 'helical',
-            transition: 70,
-            transitionType: 'percent',
-            finalPitch: 400
-          }
+          shared: false,
+          copied: false,
+          form: {...defaults}
         }),
         created: function() {
-          const language = window.localStorage.getItem('language')
-          this.form.language = null === language ? 'en' : language
-          const unit = window.localStorage.getItem('unit')
-          this.form.unit = null === unit ? 'mm' : unit
-          const step = window.localStorage.getItem('step')
-          this.form.step = null === step ? 10 : step
-          const offset = window.localStorage.getItem('offset')
-          this.form.offset = null === offset ? 0 : offset
-          const diameter = window.localStorage.getItem('diameter')
-          this.form.diameter = null === diameter ? 350 : diameter
-          const pitch = window.localStorage.getItem('pitch')
-          this.form.pitch = null === pitch ? 500 : pitch
-          const method = window.localStorage.getItem('method')
-          this.form.method = null === method ? 'helical' : method
-          const transition = window.localStorage.getItem('transition')
-          this.form.transition = null === transition ? 70 : transition
-          const transitionType = window.localStorage.getItem('transitionType')
-          this.form.transitionType = null === transitionType ? 'percent' : transitionType
-          const finalPitch = window.localStorage.getItem('finalPitch')
-          this.form.finalPitch = null === finalPitch ? 400 : finalPitch
+          this.load()
         },
         mounted: function() {
           const container = this.$refs.chart.parentNode
@@ -368,6 +386,29 @@
         methods: {
           t: function(text) {
             return this.translations[this.form.language][text] || text
+          },
+          // Values from a shared link take priority over the saved ones and are not saved;
+          // fields missing from the link get their defaults
+          load: function() {
+            const params = new URLSearchParams(window.location.search)
+            this.shared = sharedFields.some(key => params.has(key))
+            Object.keys(defaults).forEach(key => {
+              const value = this.shared && 'language' !== key ? params.get(key) : window.localStorage.getItem(key)
+              const valid = null !== value && (!options[key] || options[key].includes(value))
+              this.form[key] = valid ? value : defaults[key]
+            })
+          },
+          forgetLink: function() {
+            window.history.replaceState(null, '', window.location.pathname)
+            this.load()
+          },
+          share: function() {
+            const params = new URLSearchParams()
+            sharedFields.forEach(key => params.set(key, this.form[key]))
+            navigator.clipboard.writeText(window.location.origin + window.location.pathname + '?' + params).then(() => {
+              this.copied = true
+              setTimeout(() => { this.copied = false }, 2000)
+            })
           },
           // Helical pitch up to the transition radius, then the pitch changes from P
           // to the final pitch at the tip: linearly (Treger method) or quadratically,
@@ -473,38 +514,11 @@
             }
           }
         },
-        watch: {
-          'form.language': function (value) {
-            window.localStorage.setItem('language', value)
-          },
-          'form.unit': function (value) {
-            window.localStorage.setItem('unit', value)
-          },
-          'form.step': function (value) {
-            window.localStorage.setItem('step', value)
-          },
-          'form.offset': function (value) {
-            window.localStorage.setItem('offset', value)
-          },
-          'form.diameter': function (value) {
-            window.localStorage.setItem('diameter', value)
-          },
-          'form.pitch': function (value) {
-            window.localStorage.setItem('pitch', value)
-          },
-          'form.method': function (value) {
-            window.localStorage.setItem('method', value)
-          },
-          'form.transition': function (value) {
-            window.localStorage.setItem('transition', value)
-          },
-          'form.transitionType': function (value) {
-            window.localStorage.setItem('transitionType', value)
-          },
-          'form.finalPitch': function (value) {
-            window.localStorage.setItem('finalPitch', value)
+        watch: Object.fromEntries(Object.keys(defaults).map(key => ['form.' + key, function(value) {
+          if ('language' === key || !this.shared) {
+            window.localStorage.setItem(key, value)
           }
-        }
+        }]))
       }).mount('#app')
     </script>
 </body>
